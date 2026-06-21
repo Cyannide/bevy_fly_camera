@@ -92,3 +92,4 @@ Any PRs are also welcome, though keep in mind that the project scope is intentio
 | `0.16`       | `0.16`                    |
 | `0.17`       | `0.17`                    |
 | `0.18`       | `0.18`                    |
+| `0.19`       | `0.19`                    |
