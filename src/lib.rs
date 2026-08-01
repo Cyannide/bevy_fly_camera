@@ -75,7 +75,13 @@ pub struct FlyCamera {
 	pub accel: f32,
 	/// The maximum speed the FlyCamera can move at. Defaults to `0.5`
 	pub max_speed: f32,
-	/// The sensitivity of the FlyCamera's motion based on mouse movement. Defaults to `3.0`
+	/// Degrees of rotation per pixel of mouse movement. Defaults to `0.1`.
+	///
+	/// Deliberately *not* scaled by frame time: a mouse delta is already a
+	/// per-frame displacement, so multiplying by `delta_secs` made the look
+	/// speed depend on the frame rate — and on a long hitch frame (shader
+	/// compilation at world entry can exceed a second) a single swipe became
+	/// thousands of degrees, leaving the camera pointed at nothing.
 	pub sensitivity: f32,
 	/// The amount of deceleration to apply to the camera's motion. Defaults to `1.0`
 	pub friction: f32,
@@ -105,7 +111,7 @@ impl Default for FlyCamera {
 		Self {
 			accel: 1.5,
 			max_speed: 0.5,
-			sensitivity: 3.0,
+			sensitivity: 0.1,
 			friction: 1.0,
 			pitch: 0.0,
 			yaw: 0.0,
@@ -200,7 +206,6 @@ fn camera_movement_system(
 }
 
 fn mouse_motion_system(
-	time: Res<Time>,
 	mut mouse_motion_event_reader: MessageReader<MouseMotion>,
 	mut query: Query<(&mut FlyCamera, &mut Transform)>,
 ) {
@@ -216,8 +221,9 @@ fn mouse_motion_system(
 		if !options.enabled {
 			continue;
 		}
-		options.yaw -= delta.x * options.sensitivity * time.delta_secs();
-		options.pitch += delta.y * options.sensitivity * time.delta_secs();
+		// No delta-time factor here on purpose — see `sensitivity`.
+		options.yaw -= delta.x * options.sensitivity;
+		options.pitch += delta.y * options.sensitivity;
 
 		options.pitch = options.pitch.clamp(-89.9, 89.9);
 		// println!("pitch: {}, yaw: {}", options.pitch, options.yaw);
