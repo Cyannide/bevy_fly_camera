@@ -52,7 +52,7 @@
 
 use bevy::{input::mouse::MouseMotion, prelude::*};
 use cam2d::camera_2d_movement_system;
-use util::movement_axis;
+use util::{movement_axis, movement_axis_with_shift_check};
 
 mod cam2d;
 mod util;
@@ -165,7 +165,16 @@ fn camera_movement_system(
 				movement_axis(&keyboard_input, options.key_up, options.key_down),
 			)
 		} else {
-			(0.0, 0.0, 0.0)
+			(
+				movement_axis_with_shift_check(&keyboard_input, KeyCode::ArrowRight, KeyCode::ArrowLeft, false),
+				movement_axis_with_shift_check(
+					&keyboard_input,
+					KeyCode::ArrowDown,
+					KeyCode::ArrowUp,
+					false,
+				),
+				movement_axis_with_shift_check(&keyboard_input, KeyCode::ArrowDown, KeyCode::ArrowUp, true),
+			)
 		};
 
 		let rotation = transform.rotation;
@@ -201,7 +210,12 @@ fn camera_movement_system(
 			options.velocity + delta_friction
 		};
 
-		transform.translation += options.velocity;
+		// Per second, not per frame: velocity is accumulated in units/s (the
+		// `accel * dt` above), so applying it raw made actual speed a
+		// function of the frame rate — and made every frame-pacing wobble a
+		// visible stutter in the camera's motion, the same class of bug as
+		// the delta-scaled mouse look fixed in the previous commit.
+		transform.translation += options.velocity * time.delta_secs();
 	}
 }
 
